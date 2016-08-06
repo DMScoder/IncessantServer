@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="IncessantServer:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/IncessantServer_jar</output-path>
+    <root id="archive" name="IncessantServer.jar">
+      <element id="module-output" name="IncessantServer" />
+    </root>
+  </artifact>
+</component>
