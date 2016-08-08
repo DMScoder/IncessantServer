@@ -9,37 +9,49 @@ import java.util.Scanner;
 /**
  * Created by Immortan on 8/1/2016.
  */
-public class SocketController implements Runnable{
+public class SocketController {
 
     private ArrayList<SocketBundle> socketArrayList;
 
     public SocketController() {
 
-        Thread thread = new Thread(this);
-        socketArrayList = new ArrayList<SocketBundle>();
         System.out.println("Initialized");
-        thread.start();
+
         try {
             ServerSocket listener = new ServerSocket(9090);
+            socketArrayList = new ArrayList<>(2);
             while (true) {
-                Thread.sleep(100);
                 Socket socket = listener.accept();
-                processConnection(socket);
+
+                //processConnection(socket);
+
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(),true);
+
                 writer.println("Connection established");
-                SocketBundle socketBundle = new SocketBundle(socket,writer,reader);
+
+                SocketBundle socketBundle = new SocketBundle(socket,writer,reader,this);
                 getSocketArrayList().add(socketBundle);
             }
-        }catch (IOException e){
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        }catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private synchronized ArrayList<SocketBundle> getSocketArrayList(){
         return socketArrayList;
+    }
+
+    public synchronized void removeSocketBundle(SocketBundle socketBundle) {
+        socketArrayList.remove(socketBundle);
+    }
+
+    public synchronized void sendSearchingMessage(String string, SocketBundle host) {
+        for(int i=0;i<socketArrayList.size();i++) {
+            SocketBundle receiver = socketArrayList.get(i);
+            if (receiver.isSearching()&&receiver!=host)
+                receiver.getPrintWriter().println(string);
+        }
     }
 
     private void processConnection(Socket socket) {
@@ -83,66 +95,5 @@ public class SocketController implements Runnable{
         }catch (Exception e){
             e.printStackTrace();
         }
-    }
-
-    //Loop to continue interacting with all data
-    private void processData() {
-        while(true) {
-            try {
-                Thread.sleep(100);
-                ArrayList<SocketBundle> socketList = getSocketArrayList();
-                for (int i = 0; i < socketList.size(); i++) {
-                    System.out.println("Processing");
-                    SocketBundle socketBundle = socketList.get(i);
-                    String string = socketBundle.bufferedReader.readLine();
-
-                    if (string.startsWith("Entering")) {
-                        string = string.substring(8, string.length());
-                        socketBundle.active = true;
-                        socketBundle.displayName = string;
-                        System.out.println("Chat room entered by" + socketBundle.displayName);
-
-                        for (int j = 0; j < socketList.size(); j++) {
-                            SocketBundle receivingBundle = socketList.get(j);
-                            if (receivingBundle != socketBundle && receivingBundle.active)
-                                receivingBundle.printWriter.println(string + " has joined");
-                        }
-                    }
-
-                    else if (string.startsWith("Message")) {
-                        string = string.substring(7, string.length());
-                        System.out.println(string + " " + socketBundle.displayName);
-                        for (int j = 0; j < socketList.size(); j++) {
-                            SocketBundle receivingBundle = socketList.get(j);
-                            if (receivingBundle != socketBundle && receivingBundle.active)
-                                receivingBundle.printWriter.println(socketBundle.displayName + ": " + string);
-                        }
-                    }
-
-                    else if (string.startsWith("Leaving")) {
-                        socketBundle.active = false;
-                        System.out.println(socketBundle.displayName + " is leaving");
-                        for (int j = 0; j < socketList.size(); j++) {
-                            SocketBundle receivingBundle = socketList.get(j);
-                            if (receivingBundle != socketBundle && receivingBundle.active)
-                                receivingBundle.printWriter.println(socketBundle.displayName + " has left");
-                        }
-                    }
-
-                    else if (string.startsWith("Exit")) {
-                        socketList.remove(i);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    public void run() {
-        processData();
     }
 }
