@@ -28,12 +28,16 @@ public class SocketController {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(),true);
 
+                System.out.println("Connection established with "+socket.getInetAddress().getHostAddress());
                 writer.println("Connection established");
 
                 SocketBundle socketBundle = new SocketBundle(socket,writer,reader,this);
                 getSocketArrayList().add(socketBundle);
+                Thread.sleep(100);
             }
         }catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }

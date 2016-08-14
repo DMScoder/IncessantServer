@@ -9,7 +9,7 @@ import java.util.ArrayList;
 /**
  * Created by Immortan on 8/1/2016.
  */
-public class SocketBundle implements Runnable{
+public class SocketBundle extends Thread{
     private Socket socket;
     private PrintWriter printWriter;
     private BufferedReader bufferedReader;
@@ -23,7 +23,9 @@ public class SocketBundle implements Runnable{
         this.socket=socket;
         this.printWriter=printWriter;
         this.bufferedReader=bufferedReader;
+        this.socketController = socketController;
         pairedSocketBundles = new ArrayList<>(1);
+        this.start();
     }
 
     @Override
@@ -48,7 +50,7 @@ public class SocketBundle implements Runnable{
 
                     else if (string.startsWith("Message")) {
                         string = string.substring(7, string.length());
-                        System.out.println(string + " " + displayName);
+                        System.out.println(displayName + ": " + string);
 
                         socketController.sendSearchingMessage(displayName+": "+string,this);
                     }
@@ -60,11 +62,17 @@ public class SocketBundle implements Runnable{
                     }
 
                     else if (string.startsWith("Exit")) {
+                        searching = false;
+                        System.out.println(displayName + " is leaving");
+                        socketController.sendSearchingMessage(displayName+" is leaving",this);
                         active = false;
                         socket.close();
                         socketController.removeSocketBundle(this);
                     }
+                Thread.sleep(100);
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
